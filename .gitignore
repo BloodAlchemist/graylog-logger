@@ -1,0 +1,6 @@
+.idea/
+vendor/
+reports/
+dist/
+cache.properties
+.DS_Store

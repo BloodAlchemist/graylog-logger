@@ -1,0 +1,15 @@
+{
+    "name": "graylog2/graylog-logger",
+    "description": "A php implementation to send log messages to Graylog2.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=5.3.9",
+        "graylog2/gelf-php": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "GraylogLogger\\": "src/graylog-logger"
+        }
+    }
+}
