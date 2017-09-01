@@ -1,9 +1,10 @@
 <?php
 
-namespace GraylogLogger\Laravel;
+namespace GraylogLogger\Frameworks\Laravel;
 
 use GraylogLogger\GraylogLogger;
 use Monolog\Handler\AbstractHandler;
+use Monolog\Formatter\GelfMessageFormatter;
 
 /**
  * Class GraylogLoggerHandler
@@ -12,6 +13,19 @@ use Monolog\Handler\AbstractHandler;
  */
 class GraylogLoggerHandler extends AbstractHandler
 {
+    /**
+     * @var GelfMessageFormatter
+     */
+    protected $messageFormatter;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $this->messageFormatter = new GelfMessageFormatter();
+    }
+
     /**
      * Handle the log messages.
      *
@@ -24,7 +38,7 @@ class GraylogLoggerHandler extends AbstractHandler
          */
         if ($graylog = app('GraylogLogger') != null) {
             foreach ($messages as $message) {
-                $graylog->publish($message);
+                $graylog->publish($this->messageFormatter->format($message));
             }
         }
     }

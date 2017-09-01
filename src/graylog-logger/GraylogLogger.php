@@ -3,10 +3,10 @@
 namespace GraylogLogger;
 
 use Gelf\Message;
-use Gelf\Publisher;
-use Gelf\Transport\IgnoreErrorTransportWrapper;
-use Gelf\Transport\TcpTransport;
-use Psr\Log\LogLevel;
+use Gelf\PublisherInterface;
+use GraylogLogger\Processors\Processor;
+use GraylogLogger\Serializers\Serializer;
+use Psr\Log\InvalidArgumentException;
 
 /**
  * Class GraylogLogger
@@ -16,7 +16,7 @@ use Psr\Log\LogLevel;
 class GraylogLogger
 {
     /**
-     * @var Publisher
+     * @var PublisherInterface
      */
     protected $publisher;
 
@@ -28,239 +28,108 @@ class GraylogLogger
     /**
      * @var array
      */
-    protected $exclude;
+    protected $processors;
 
     /**
-     * @var array
-     */
-    protected $levels;
-
-    /**
-     * @var string
-     */
-    protected $facility;
-
-    /**
-     * @var string
-     */
-    protected $name;
-
-    /**
-     * @var string
-     */
-    protected $env;
-
-    /**
-     * @var array
-     */
-    protected $extraFromServer = [
-        'supervisor_process_name' => 'SUPERVISOR_PROCESS_NAME',
-        'request_method' => 'REQUEST_METHOD',
-        'remote_address' => 'REMOTE_ADDR',
-        'request_url' => 'REQUEST_URI',
-        'referrer' => 'HTTP_REFERER',
-        'server' => 'SERVER_NAME',
-        'query' => 'QUERY_STRING',
-    ];
-
-    /**
-     * Graylog constructor.
+     * Constructor.
      *
-     * @param string $name
-     * @param string $env
-     * @param string $facility
-     * @param array $levels
-     * @param string $host
-     * @param int $port
+     * @param PublisherInterface|null $publisher
+     * @param Serializer|null $serializer
      */
-    public function __construct($name, $env, $facility, $levels = [], $host = '127.0.0.1', $port = 122201)
+    public function __construct(PublisherInterface $publisher = null, Serializer $serializer = null)
     {
-        $this->name = $name;
-        $this->env = $env;
-        $this->facility = $facility;
-        $this->levels = $levels;
-
-        // Set serializer
-        $this->serializer = new Serializer();
-
-        // Set publisher
-        $this->publisher = new Publisher(
-            new IgnoreErrorTransportWrapper(
-                new TcpTransport($host, $port)
-            )
-        );
+        $this->publisher = $publisher != null ? $this->setPublisher($publisher) : null;
+        $this->serializer = $serializer != null ? $this->setSerializer($serializer) : null;
+        $this->processors = [];
     }
 
     /**
-     * Set levels links.
+     * Set publisher.
      *
-     * @param array $levels
+     * @param PublisherInterface $publisher
      * @return $this
-     * @throws \Exception
      */
-    public function setLevels($levels)
+    public function setPublisher(PublisherInterface $publisher)
     {
-        if (!is_array($levels)) {
-            throw new \Exception('Wrong level param, must be array');
+        if (!$publisher instanceof PublisherInterface) {
+            throw new InvalidArgumentException("Wrong publisher argument");
         }
 
-        $this->levels = $levels;
+        $this->publisher = $publisher;
         return $this;
     }
 
     /**
-     * Set exclude.
+     * Set serializer.
      *
-     * @param array|string $exclude
+     * @param Serializer $serializer
      * @return $this
-     * @throws \Exception
      */
-    public function setExclude($exclude)
+    public function setSerializer(Serializer $serializer)
     {
-        if (is_array($exclude)) {
-            $this->exclude = $exclude;
-        } elseif (is_string($exclude)) {
-            $this->exclude = [$exclude];
-        } else {
-            throw new \Exception('Wrong exclude param');
+        if (!$serializer instanceof Serializer) {
+            throw new InvalidArgumentException("Wrong serializer argument");
         }
 
+        $this->serializer = $serializer;
         return $this;
     }
 
     /**
-     * Publish message.
+     * Push processor in processors stack.
      *
-     * @param $message
+     * @param Processor $processor
+     * @return $this
      */
-    public function publish($message)
+    public function pushProcessor(Processor $processor)
     {
-        // Check exclude list
-        if (!in_array(get_class($message), $this->exclude)) {
-            // Get GELF and publish
-            $this->publisher->publish($this->getGelfMessage($message));
+        if (!is_callable($processor)) {
+            throw new InvalidArgumentException("Wrong processor argument");
         }
+
+        array_unshift($this->processors, $processor);
+        return $this;
     }
 
     /**
-     * Get GELF message from Exception.
+     * Pop processor from processors stack.
      *
-     * @param \Exception $message
-     * @return Message
+     * @return Processor
      */
-    protected function getGelfMessage($message)
+    public function popProcessor()
     {
-        // Assigns a list of variables
-        list($body, $level, $category, $timestamp) = $message;
-
-        // Prepare base message
-        $gelf = new Message();
-        $gelf->setLevel(Utils::getValue($this->levels, $level, LogLevel::INFO))
-            ->setAdditional('category', $category)
-            ->setFacility($this->facility)
-            ->setTimestamp($timestamp)
-            ->setFile('unknown')
-            ->setLine(0);
-
-        if (is_string($body)) {
-            // For string log message set only shortMessage
-            $gelf->setShortMessage($body);
-
-        } elseif ($body instanceof \Exception) {
-            // For Exception family set fields
-            $gelf->setShortMessage('Exception ' . get_class($body) . ': ' . $body->getMessage())
-                ->setFullMessage((string)$body)
-                ->setLine($body->getLine())
-                ->setFile($body->getFile());
-
-        } else {
-            // For else variant, if log message contains special keys 'short', 'full' or 'add',
-            // will use them as shortMessage, fullMessage and additionals respectively
-
-            // If 'short' is set
-            if ($short = Utils::removeValue($text, 'short') !== null) {
-                $gelf->setShortMessage($short);
-                // All remaining message is fullMessage by default
-                $gelf->setFullMessage($this->serializer->serialize($text));
-            } else {
-                // Will use log message as shortMessage by default (no need to add fullMessage in this case)
-                $gelf->setShortMessage($this->serializer->serialize($text));
-            }
-
-            // If 'full' is set will use it as fullMessage (note that all other stuff in log message will not be logged,
-            // except 'short' and 'add')
-            if ($full = Utils::removeValue($text, 'full') !== null) {
-                $gelf->setFullMessage($this->serializer->serialize($full));
-            }
-
-            // Process additionals array (only with string keys)
-            if ($add = Utils::removeValue($text, 'add') !== null) {
-                if (is_array($add)) {
-                    foreach ($add as $key => $val) {
-                        if (is_string($key)) {
-                            if (!is_string($val)) {
-                                $val = $this->serializer->serialize($val);
-                            }
-                            $gelf->setAdditional($key, $val);
-                        }
-                    }
-                }
-            }
+        if (!count($this->processors)) {
+            throw new \LogicException("Processor stack is empty");
         }
 
-        // Set 'file', 'line' and additional 'trace', if log message contains traces array
-        if (isset($message[4]) && is_array($message[4])) {
-            $traces = [];
-            foreach ($message[4] as $index => $trace) {
-                $traces[] = "{$trace['file']}:{$trace['line']}";
-                if ($index === 0) {
-                    $gelf->setFile($trace['file'])
-                        ->setLine($trace['line']);
-                }
-            }
-            $gelf->setAdditional('trace', implode("\n", $traces));
-        }
-
-        // Add extra
-        foreach ($this->getExtraFields() as $key => $value) {
-            $gelf->setAdditional($key, $value);
-        }
-
-        return $gelf;
+        return array_shift($this->processors);
     }
 
     /**
-     * Get extra fields.
+     * Publish GELF message
      *
-     * @return array
+     * @param Message $message
      */
-    private function getExtraFields()
+    public function publish(Message $message)
     {
-        // Default fields
-        $extra = [
-            'app_name' => $this->name,
-            'app_env' => $this->env,
-            'url' => Utils::getCurrentRequestUrl()
-        ];
+        if ($this->publisher == null) {
+            throw new \LogicException("Publisher is not set");
+        }
 
-        // Add from $_SERVER
-        foreach ($this->extraFromServer as $extraName => $serverName) {
-            if (isset($_SERVER[$serverName])) {
-                $extra[$extraName] = $_SERVER[$serverName];
+        if ($this->serializer == null) {
+            throw new \LogicException("Serializer is not set");
+        }
+
+        if ($message) {
+            // Processors perform GELF message
+            if ($this->processors) {
+                foreach ($this->processors as $processor) {
+                    $message = call_user_func($processor, $message, $this->serializer);
+                }
             }
+
+            // Publish GELF message
+            $this->publisher->publish($message);
         }
-
-        // Session id
-        if (function_exists('session_id') && ($id = session_id())) {
-            $extra['session_id'] = $id;
-        }
-
-        // Add globals
-        $extra['get'] = print_r($this->serializer->serialize($_GET), true);
-        $extra['post'] = print_r($this->serializer->serialize($_POST), true);
-        $extra['files'] = print_r($this->serializer->serialize($_FILES), true);
-        $extra['session'] = print_r($this->serializer->serialize($_SESSION), true);
-
-        return $extra;
     }
 }

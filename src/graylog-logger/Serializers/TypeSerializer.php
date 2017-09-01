@@ -1,6 +1,6 @@
 <?php
 
-namespace GraylogLogger;
+namespace GraylogLogger\Serializers;
 
 /**
  * Class Serializer
@@ -8,7 +8,7 @@ namespace GraylogLogger;
  *
  * @package GraylogLogger
  */
-class Serializer
+class TypeSerializer implements Serializer
 {
     /*
      * The default mb detect order.
@@ -115,7 +115,7 @@ class Serializer
         }
 
         if (strlen($value) > 1024) {
-            $value = substr($value, 0, 1014) . ' {clipped}';
+            $value = substr($value, 0, 1014) . ' ...';
         }
 
         return $value;

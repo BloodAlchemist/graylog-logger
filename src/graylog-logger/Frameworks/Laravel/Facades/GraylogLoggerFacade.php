@@ -1,6 +1,6 @@
 <?php
 
-namespace GraylogLogger\Laravel\Facades;
+namespace GraylogLogger\Frameworks\Laravel\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
