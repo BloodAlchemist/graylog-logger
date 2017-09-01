@@ -13,16 +13,26 @@ use GraylogLogger\Serializers\Serializer;
 class WebServerProcessor implements Processor
 {
     /**
-     * @var array Default server fields
+     * @var array Globals fields
+     */
+    protected $globals = [
+        'get' => '$_GET',
+        'post' => '$_POST',
+        'files' => '$_FILES',
+        'cookie' => '$_COOKIE',
+        'session' => '$_SESSION',
+    ];
+    /**
+     * @var array Server fields
      */
     protected $extraFields = [
         'server' => 'SERVER_NAME',
-        'supervisor_process_name' => 'SUPERVISOR_PROCESS_NAME',
-        'request_url' => 'REQUEST_URI',
-        'request_method' => 'REQUEST_METHOD',
         'query' => 'QUERY_STRING',
-        'remote_address' => 'REMOTE_ADDR',
         'unique_id' => 'UNIQUE_ID',
+        'request_url' => 'REQUEST_URI',
+        'remote_address' => 'REMOTE_ADDR',
+        'request_method' => 'REQUEST_METHOD',
+        'supervisor_process_name' => 'SUPERVISOR_PROCESS_NAME',
     ];
 
     /**
@@ -72,11 +82,12 @@ class WebServerProcessor implements Processor
             }
         }
 
-        // Add other globals
-        $message->setAdditional('get', print_r($serializer->serialize($_GET), true));
-        $message->setAdditional('post', print_r($serializer->serialize($_POST), true));
-        $message->setAdditional('files', print_r($serializer->serialize($_FILES), true));
-        $message->setAdditional('session', print_r($serializer->serialize($_SESSION), true));
+        // Add globals
+        foreach ($this->globals as $extra => $global) {
+            if (isset($GLOBALS[$global])) {
+                $message->setAdditional($extra, print_r($serializer->serialize($GLOBALS[$global]), true));
+            }
+        }
 
         // Session id
         if (function_exists('session_id') && ($id = session_id())) {
