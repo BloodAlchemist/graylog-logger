@@ -23,9 +23,7 @@ class Utils
 
         $host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : (
                     !empty($_SERVER['LOCAL_ADDR']) ? $_SERVER['LOCAL_ADDR'] : (
-                        !empty($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : ''
-                    )
-        );
+                        !empty($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : ''));
 
         $protocol = self::isHttps() ? 'https' : 'http';
         return "{$protocol}://{$host}{$_SERVER['REQUEST_URI']}";
@@ -58,7 +56,6 @@ class Utils
 
     /**
      * Retrieves the value of an array element or object property with the given key or property name.
-     * Copy from \yii\helpers\BaseArrayHelper.
      *
      * @param array|object $array
      * @param string|\Closure|array $key
@@ -100,7 +97,6 @@ class Utils
     /**
      * Removes an item from an array and returns the value.
      * If the key does not exist in the array, the default value will be returned instead.
-     * Copy from \yii\helpers\BaseArrayHelper.
      *
      * @param array $array
      * @param string $key
