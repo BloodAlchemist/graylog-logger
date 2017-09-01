@@ -8,10 +8,11 @@ use Gelf\Transport\TcpTransport;
 use GraylogLogger\Frameworks\Laravel\GraylogLoggerHandler;
 use GraylogLogger\GraylogLogger;
 use GraylogLogger\Processors\AppProcessor;
+use GraylogLogger\Processors\WebServerProcessor;
 use GraylogLogger\Serializers\TypeSerializer;
-use Monolog\Logger;
 use Illuminate\Log\Writer;
 use Illuminate\Support\ServiceProvider;
+use Monolog\Logger;
 
 /**
  * Class GraylogLoggerServiceProvider
@@ -25,7 +26,7 @@ class GraylogLoggerServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('GraylogLogger', function ($app) {
+        $this->app->bind('GraylogLogger', function () {
             return (new GraylogLogger())
                 ->setPublisher(new Publisher(new IgnoreErrorTransportWrapper(new TcpTransport(
                     config('graylog_logger.host'),
@@ -49,8 +50,9 @@ class GraylogLoggerServiceProvider extends ServiceProvider
         // Set publishes
         $this->publishes([__DIR__ . '/../config/graylog_logger.php' => config_path('graylog_logger.php')]);
 
-        // Set handler
+        /** @var \Illuminate\Log\Writer $logger */
         if (($logger = $this->app['log']) instanceof Writer) {
+            /** @var \Monolog\Logger $monolog */
             if (($monolog = $logger->getMonolog()) instanceof Logger) {
                 $monolog->pushHandler(new GraylogLoggerHandler());
             }

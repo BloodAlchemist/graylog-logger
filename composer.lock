@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "67b0a9f7c3202e1557fe4f9a9871f174",
+    "content-hash": "c49dd284cef28133ecdf9f16bdacce1d",
     "packages": [
         {
             "name": "graylog2/gelf-php",
