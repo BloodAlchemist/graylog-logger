@@ -3,6 +3,7 @@
     "description": "A php implementation to send log messages to Graylog2.",
     "type": "library",
     "license": "MIT",
+    "version": "1.0.0",
     "require": {
         "php": ">=5.3.9",
         "graylog2/gelf-php": "^1.5"
