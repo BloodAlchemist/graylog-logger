@@ -16,11 +16,11 @@ class WebServerProcessor implements Processor
      * @var array Globals fields
      */
     protected $globals = [
-        'get' => '$_GET',
-        'post' => '$_POST',
-        'files' => '$_FILES',
-        'cookie' => '$_COOKIE',
-        'session' => '$_SESSION',
+        'get' => '_GET',
+        'post' => '_POST',
+        'files' => '_FILES',
+        'cookie' => '_COOKIE',
+        'session' => '_SESSION',
     ];
     /**
      * @var array Server fields
