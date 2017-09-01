@@ -73,10 +73,10 @@ class WebServerProcessor implements Processor
         }
 
         // Add other globals
-        $extra['get'] = print_r($serializer->serialize($_GET), true);
-        $extra['post'] = print_r($serializer->serialize($_POST), true);
-        $extra['files'] = print_r($serializer->serialize($_FILES), true);
-        $extra['session'] = print_r($serializer->serialize($_SESSION), true);
+        $message->setAdditional('get', print_r($serializer->serialize($_GET), true));
+        $message->setAdditional('post', print_r($serializer->serialize($_POST), true));
+        $message->setAdditional('files', print_r($serializer->serialize($_FILES), true));
+        $message->setAdditional('session', print_r($serializer->serialize($_SESSION), true));
 
         // Session id
         if (function_exists('session_id') && ($id = session_id())) {
