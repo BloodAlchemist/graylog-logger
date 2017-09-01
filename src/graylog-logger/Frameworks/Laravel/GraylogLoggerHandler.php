@@ -2,7 +2,6 @@
 
 namespace GraylogLogger\Frameworks\Laravel;
 
-use GraylogLogger\GraylogLogger;
 use Monolog\Handler\AbstractHandler;
 use Monolog\Formatter\GelfMessageFormatter;
 
@@ -34,7 +33,7 @@ class GraylogLoggerHandler extends AbstractHandler
     public function handle($messages)
     {
         /**
-         * @var GraylogLogger $graylog
+         * @var \GraylogLogger\GraylogLogger $graylog
          */
         if ($graylog = app('GraylogLogger') != null) {
             foreach ($messages as $message) {

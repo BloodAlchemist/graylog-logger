@@ -5,8 +5,8 @@ namespace GraylogLogger\Frameworks\Laravel\Providers;
 use Gelf\Publisher;
 use Gelf\Transport\IgnoreErrorTransportWrapper;
 use Gelf\Transport\TcpTransport;
+use GraylogLogger\Frameworks\Laravel\GraylogLoggerHandler;
 use GraylogLogger\GraylogLogger;
-use GraylogLogger\Laravel\GraylogLoggerHandler;
 use GraylogLogger\Processors\AppProcessor;
 use GraylogLogger\Serializers\TypeSerializer;
 use Monolog\Logger;
@@ -47,7 +47,7 @@ class GraylogLoggerServiceProvider extends ServiceProvider
     public function boot()
     {
         // Set publishes
-        $this->publishes([__DIR__ . '/config/graylog_logger.php' => config_path('graylog_logger.php')]);
+        $this->publishes([__DIR__ . '/../config/graylog_logger.php' => config_path('graylog_logger.php')]);
 
         // Set handler
         if (($logger = $this->app['log']) instanceof Writer) {
