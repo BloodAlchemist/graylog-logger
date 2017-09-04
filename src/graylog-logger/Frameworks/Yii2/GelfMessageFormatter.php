@@ -30,10 +30,10 @@ class GelfMessageFormatter
     /**
      * Format record to GEFL message.
      *
-     * @param \Exception $record
+     * @param $record
      * @return Message
      */
-    public function format(\Exception $record)
+    public function format($record)
     {
         // Assigns a list of variables
         list($body, $level, $category, $timestamp) = $record;

@@ -5,6 +5,7 @@ namespace GraylogLogger\Frameworks\Yii2;
 use Gelf\Publisher;
 use Gelf\Transport\IgnoreErrorTransportWrapper;
 use Gelf\Transport\TcpTransport;
+use GraylogLogger\GraylogLogger;
 use GraylogLogger\Processors\AppProcessor;
 use GraylogLogger\Processors\WebServerProcessor;
 use GraylogLogger\Serializers\TypeSerializer;
