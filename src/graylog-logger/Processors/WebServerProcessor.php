@@ -91,7 +91,7 @@ class WebServerProcessor implements Processor
 
         // Session id
         if (function_exists('session_id') && ($id = session_id())) {
-            $extra['session_id'] = $id;
+            $message->setAdditional('session_id', $id);
         }
 
         return $message;
